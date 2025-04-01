@@ -1,0 +1,8 @@
+streamlit
+transformers
+python-dotenv
+torch
+plotly
+requests
+import { Anthropic } from "@anthropic-ai/sdk"
+os
