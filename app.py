@@ -1,10 +1,5 @@
 """
-Main entry point for the Journal Streamlit Application.
-
-This application allows users to:
-1. Create and manage journal entries
-2. Analyze the emotional content of journal entries
-3. Chat with an AI assistant about their journal memories
+Main app for the Journal
 """
 
 import streamlit as st
@@ -26,7 +21,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def main():
-    """Main function for the home page of the Journal application."""
+    """Main function for the app."""
     # Set up page configuration
     st.set_page_config(
         page_title="Journal App",
@@ -35,24 +30,22 @@ def main():
         initial_sidebar_state="expanded"
     )
     
-    # Display app title and description
-    st.title("Journal Application")
+    # Display app title
+    st.title("Hey there! 👋")
     
     # Add a welcome message
     st.markdown("""
-    ## Welcome to your personal journal app!
+    ## Good to see you back!
     
-    This application allows you to:
+    What's up for today?
     
-    - **Create and manage journal entries** - Record your thoughts, feelings, and experiences
-    - **Analyze the emotional content** of your journal entries with interactive visualizations
-    - **Chat with an AI assistant** about your journal memories and insights
-    
-    Use the sidebar to navigate to different sections of the application.
+    - **Wanna write some thoughts?** 📝
+    - **Curious about your mood these days?** 📊
+    - **Wanna chat with me?** 💬
     """)
     
     # Add app statistics
-    st.subheader("App Overview")
+    st.subheader("Quick Stats")
     
     # Try to get journal entry count from Supabase
     try:
@@ -64,33 +57,29 @@ def main():
         entry_count = 0
     
     # Display app stats in columns
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
     
     with col1:
-        st.metric(label="Journal Entries", value=entry_count)
+        st.metric(label="Your Entries", value=entry_count)
     
     with col2:
-        # Today's date for the "Days Journaling" metric
         today = datetime.now().strftime("%Y-%m-%d")
-        st.metric(label="Today's Date", value=today)
+        st.metric(label="Today", value=today)
     
+    # Add buttons for navigation
+    st.markdown("### Where to?")
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown("[📝 Journal stuff](/journal_page)", unsafe_allow_html=True)
+    with col2:
+        st.markdown("[📊 How you've been feeling](/analysis_page)", unsafe_allow_html=True)
     with col3:
-        # Current version of the app
-        st.metric(label="App Version", value="1.0.0")
-    
-    # Add a getting started section
-    st.subheader("Getting Started")
-    st.markdown("""
-    1. **Journal Page**: Add a new journal entry for today or any date
-    2. **Analysis Page**: View emotional analysis of your journal entries over time
-    3. **Chat Page**: Talk to an AI assistant that can help you reflect on your journal entries
-    
-    Start by adding your first journal entry in the Journal Page.
-    """)
+        st.markdown("[💬 Let's chat](/chat_page)", unsafe_allow_html=True)
     
     # Add a footer
     st.markdown("---")
-    st.markdown("*Powered by Streamlit - Supabase - n8n - and Team9*")
+    st.markdown("*Team9 vibes only ✨*")
 
 if __name__ == "__main__":
     main()

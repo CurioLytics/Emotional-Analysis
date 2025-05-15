@@ -1,9 +1,5 @@
 """
-Journal analysis module that displays emotional analysis data from journal entries
-stored in Supabase.
-
-This module provides visualizations and insights into the emotional content
-of journal entries, including line graphs and pie charts showing emotion trends.
+Your mood tracker
 """
 
 import streamlit as st
@@ -42,44 +38,26 @@ EMOTION_EMOJIS = {
 }
 
 # Define emotion ratios for score calculation
-# Positive emotions have positive ratios, negative emotions have negative ratios
 EMOTION_RATIOS = {
-    "joy": 1.0,    # Highly positive
-    "love": 0.8,   # Positive
-    "surprise": 0.5,     # Mildly positive
-    "fear": -0.5,        # Mildly negative
-    "sadness": -0.8,     # Negative
-    "anger": -0.9,       # Strongly negative
+    "joy": 1.0,
+    "love": 0.8,
+    "surprise": 0.5,
+    "fear": -0.5,
+    "sadness": -0.8,
+    "anger": -0.9,
 }
 
 def init_supabase():
-    """
-    Initialize Supabase client with credentials from environment variables.
-    
-    Returns:
-        Any: Initialized Supabase client
-        
-    Raises:
-        ValueError: If Supabase credentials are missing or invalid
-        ConnectionError: If Supabase connection fails
-    """
+    """Get Supabase connection"""
     try:
-        # Use the centralized function for getting a Supabase client
         return get_supabase_client()
     except (ValueError, ConnectionError) as e:
-        # Show the error in the Streamlit UI and stop execution
-        error_msg = str(e)
-        logger.error(error_msg)
-        st.error(error_msg)
+        logger.error(str(e))
+        st.error(str(e))
         st.stop()
 
 def generate_dummy_data() -> pd.DataFrame:
-    """
-    Generate dummy emotion data for testing purposes.
-    
-    Returns:
-        pd.DataFrame: DataFrame with 10 rows of simulated journal entries and emotion scores
-    """
+    """Generate some example data to play with"""
     # Create date range for the past 10 days
     today = datetime.now()
     dates = [(today - timedelta(days=i)).date() for i in range(10)]
@@ -138,20 +116,7 @@ def generate_dummy_data() -> pd.DataFrame:
 
 def get_emotion_scores(start_date: Optional[datetime] = None, 
                        end_date: Optional[datetime] = None) -> pd.DataFrame:
-    """
-    Fetch emotion scores from Supabase database within the given date range.
-    
-    The function queries the database for emotion scores and formats the data
-    for visualization.
-    
-    Args:
-        start_date (Optional[datetime]): Start date for filtering
-        end_date (Optional[datetime]): End date for filtering
-        
-    Returns:
-        pd.DataFrame: DataFrame containing emotion scores with date and columns
-                     for each emotion (happiness, sadness, etc.)
-    """
+    """Get emotion data from database"""
     # For testing purposes: uncomment the line below to use dummy data instead of actual data
     # return generate_dummy_data()
     
@@ -186,7 +151,7 @@ def get_emotion_scores(start_date: Optional[datetime] = None,
             return empty_df
     except Exception as e:
         # Log the error and show a message to the user
-        error_msg = f"Error retrieving emotion data: {str(e)}"
+        error_msg = f"Oops! Couldn't get your data: {str(e)}"
         logger.error(error_msg)
         st.error(error_msg)
         
@@ -195,19 +160,7 @@ def get_emotion_scores(start_date: Optional[datetime] = None,
         return empty_df
 
 def calculate_emotion_score(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Calculate a single emotion score for each entry by applying emotion ratios.
-    
-    This function creates a new column 'emotion_score' which is the sum of each emotion
-    value multiplied by its corresponding ratio (positive ratios for positive emotions,
-    negative ratios for negative emotions).
-    
-    Args:
-        df (pd.DataFrame): DataFrame containing emotion data with separate columns for each emotion
-        
-    Returns:
-        pd.DataFrame: DataFrame with an additional 'emotion_score' column
-    """
+    """Calculate overall mood score"""
     if df.empty:
         return pd.DataFrame(columns=['date-entry', 'emotion_score'])
     
@@ -226,14 +179,9 @@ def calculate_emotion_score(df: pd.DataFrame) -> pd.DataFrame:
     return result_df[['date-entry', 'emotion_score']]
 
 def display_emotion_line_chart(df: pd.DataFrame) -> None:
-    """
-    Display a line chart of combined emotion score over time.
-    
-    Args:
-        df (pd.DataFrame): DataFrame containing emotion data
-    """
+    """Show mood timeline chart"""
     if df.empty:
-        st.info("No emotion data available to display.")
+        st.info("No mood data to show yet.")
         return
     
     # Calculate emotion score
@@ -242,10 +190,10 @@ def display_emotion_line_chart(df: pd.DataFrame) -> None:
     # Create the chart with a single line
     chart = alt.Chart(chart_df).mark_line().encode(
         x=alt.X('date-entry:T', title='Date'),
-        y=alt.Y('emotion_score:Q', title='Emotion Score'),
+        y=alt.Y('emotion_score:Q', title='Mood Score'),
         tooltip=['date-entry', 'emotion_score']
     ).properties(
-        title='Emotion Score Over Time',
+        title='Your Mood Timeline',
         width=700,
         height=400
     ).interactive()
@@ -261,14 +209,9 @@ def display_emotion_line_chart(df: pd.DataFrame) -> None:
     st.altair_chart(final_chart, use_container_width=True)
 
 def display_emotion_pie_chart(df: pd.DataFrame) -> None:
-    """
-    Display a pie chart showing the distribution of emotions.
-    
-    Args:
-        df (pd.DataFrame): DataFrame containing emotion data
-    """
+    """Show mood pie chart"""
     if df.empty:
-        st.info("No emotion data available to display.")
+        st.info("No mood data to show yet.")
         return
     
     # Calculate average values for each emotion across the selected date range
@@ -285,9 +228,9 @@ def display_emotion_pie_chart(df: pd.DataFrame) -> None:
         pie_data, 
         values='average_score', 
         names='emotion',
-        title='Emotion Distribution',
+        title='Your Mood Mix',
         color_discrete_sequence=px.colors.qualitative.Plotly,
-        labels={'emotion': 'Emotion', 'average_score': 'Average Score'}
+        labels={'emotion': 'Mood', 'average_score': 'Amount'}
     )
     
     # Update trace settings for better appearance
@@ -301,15 +244,7 @@ def display_emotion_pie_chart(df: pd.DataFrame) -> None:
     st.plotly_chart(fig, use_container_width=True)
 
 def get_emotion_summary(df: pd.DataFrame) -> Dict[str, float]:
-    """
-    Calculate average scores for each emotion.
-    
-    Args:
-        df (pd.DataFrame): DataFrame containing emotion data
-        
-    Returns:
-        Dict[str, float]: Dictionary mapping emotions to their average scores
-    """
+    """Get mood breakdown"""
     if df.empty:
         return {}
     
@@ -318,15 +253,7 @@ def get_emotion_summary(df: pd.DataFrame) -> Dict[str, float]:
     return summary
 
 def calculate_dominant_emotion(df: pd.DataFrame) -> Tuple[str, float]:
-    """
-    Determine the dominant emotion based on average scores.
-    
-    Args:
-        df (pd.DataFrame): DataFrame containing emotion data
-        
-    Returns:
-        Tuple[str, float]: Tuple containing the name of the dominant emotion and its score
-    """
+    """Find your main mood"""
     if df.empty:
         return ("", 0.0)
     
@@ -341,15 +268,7 @@ def calculate_dominant_emotion(df: pd.DataFrame) -> Tuple[str, float]:
     return ("", 0.0)
 
 def add_main_emotion_column(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Add a main_emotion column to the DataFrame containing the dominant emotion for each entry.
-    
-    Args:
-        df (pd.DataFrame): DataFrame containing emotion data
-        
-    Returns:
-        pd.DataFrame: DataFrame with an additional main_emotion column
-    """
+    """Add main mood column"""
     if df.empty or not any(col in df.columns for col in EMOTION_COLUMNS):
         return df
     
@@ -369,19 +288,17 @@ def add_main_emotion_column(df: pd.DataFrame) -> pd.DataFrame:
     return result_df
 
 def main():
-    """Main function for the journal analysis page."""
+    """Analysis page"""
     # Page title
-    st.title("Journal Analysis")
+    st.title("Your Mood Tracker 📊")
     
-    st.write("""
-    This page displays emotional analysis of your journal entries.
-    The analysis shows the distribution and trends of emotions detected in your writing over time.
-    The line chart displays an overall emotion score where positive values indicate positive emotions
-    and negative values indicate negative emotions.
+    st.markdown("""
+    Hey! Here's where you can see how you've been feeling lately.
+    Above zero means happy vibes, below zero means not so great vibes.
     """)
     
     # Date filter controls
-    st.subheader("Filter by Date")
+    st.subheader("Pick a timeframe")
     
     # Get all available dates from the database
     all_data = get_emotion_scores()
@@ -397,7 +314,7 @@ def main():
         
         # Use date range slider instead of date pickers
         date_range = st.slider(
-            "Select Date Range",
+            "Drag to change dates",
             min_value=min_date,
             max_value=max_date,
             value=(default_start, default_end),
@@ -413,19 +330,19 @@ def main():
         
         col1, col2 = st.columns(2)
         with col1:
-            start_date = st.date_input("Start Date", default_start)
+            start_date = st.date_input("From", default_start)
         with col2:
-            end_date = st.date_input("End Date", default_end)
+            end_date = st.date_input("To", default_end)
     
     # Convert date inputs to datetime objects
     start_datetime = datetime.combine(start_date, datetime.min.time())
     end_datetime = datetime.combine(end_date, datetime.max.time())
     
     # Add a checkbox to use dummy data for testing
-    use_dummy_data = st.sidebar.checkbox("Use dummy test data", value=False)
+    use_dummy_data = st.sidebar.checkbox("Show me some example data", value=False)
     
     # Fetch emotion data based on date filter
-    with st.spinner("Loading emotion data..."):
+    with st.spinner("Loading your mood data..."):
         if use_dummy_data:
             emotion_df = generate_dummy_data()
             # Filter based on date range if needed
@@ -440,27 +357,24 @@ def main():
     # Display charts and insights if data is available
     if not emotion_df.empty and any(col in emotion_df.columns for col in EMOTION_COLUMNS):
         # Create tabs for different visualizations
-        tab1, tab2, tab3 = st.tabs(["Line Chart", "Pie Chart", "Data"])
+        tab1, tab2, tab3 = st.tabs(["Timeline", "Pie Chart", "Details"])
         
         # Tab 1: Line Chart
         with tab1:
-            st.subheader("Emotion Trends Over Time")
-            st.write("""
-            The line chart below shows your overall emotional state over time. 
-            Positive values indicate positive emotions (happiness, surprise), 
-            while negative values indicate negative emotions (sadness, fear, anger, disgust).
-            Values near zero indicate neutral emotions.
+            st.subheader("How you've been feeling")
+            st.markdown("""
+            Up = good vibes, Down = not so good vibes
             """)
             display_emotion_line_chart(emotion_df)
         
         # Tab 2: Pie Chart
         with tab2:
-            st.subheader("Emotion Distribution")
+            st.subheader("Your mood mix")
             display_emotion_pie_chart(emotion_df)
         
         # Tab 3: Data Table
         with tab3:
-            st.subheader("Raw Emotion Data")
+            st.subheader("All your mood data")
             # Format the date column for display
             display_df = emotion_df.copy()
             
@@ -482,7 +396,7 @@ def main():
             st.dataframe(display_df, use_container_width=True)
         
         # Display summary statistics with emojis
-        st.subheader("Emotion Summary")
+        st.subheader("Your mood breakdown")
         emotion_summary = get_emotion_summary(emotion_df)
         
         if emotion_summary:
@@ -510,9 +424,9 @@ def main():
             dominant_emotion, dominant_score = calculate_dominant_emotion(emotion_df)
             if dominant_emotion:
                 emoji = EMOTION_EMOJIS.get(dominant_emotion, "")
-                st.info(f"Your most prominent emotion during this period was **{emoji} {dominant_emotion.capitalize()}** with an average score of {dominant_score:.2f}.")
+                st.info(f"You've been feeling mostly **{emoji} {dominant_emotion.capitalize()}** lately (score: {dominant_score:.2f})")
     else:
-        st.info("No emotion data available for the selected date range. Try selecting a different period or adding more journal entries.")
+        st.info("No mood data for these dates. Try picking different dates or adding some journal entries first!")
 
 if __name__ == "__main__":
     main()
