@@ -43,6 +43,8 @@ def main() -> None:
         st.session_state.messages = []
     if "session_id" not in st.session_state:
         st.session_state.session_id = generate_session_id()
+    if "show_confirmation" not in st.session_state:
+        st.session_state.show_confirmation = False
     
     # Display chat messages
     for message in st.session_state.messages:
@@ -89,11 +91,57 @@ def main() -> None:
                 # Add LLM response to chat history
                 st.session_state.messages.append({"role": "assistant", "content": full_response})
     
-    # Add a button to clear the chat history
-    if st.button("Clear conversation"):
-        st.session_state.messages = []
-        st.session_state.session_id = generate_session_id()
-        st.rerun()
+    # Add a button to exit the chat
+    if not st.session_state.show_confirmation:
+        if st.button("Bye"):
+            if len(st.session_state.messages) > 0:
+                st.session_state.show_confirmation = True
+                st.rerun()
+            else:
+                # If no messages, simply clear and refresh
+                st.session_state.messages = []
+                st.session_state.session_id = generate_session_id()
+                st.rerun()
+    
+    # Show confirmation dialog when the Bye button is clicked
+    if st.session_state.show_confirmation:
+        # Create a container with a border and background for the popup effect
+        with st.container():
+            st.markdown("""
+            <div style="padding:15px; border:1px solid #ddd; border-radius:5px; background-color:#f8f9fa;">
+            <h4>Do you want me to summarize this conversation as journal of the day for you?</h4>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                if st.button("You bet"):
+                    # Send message to LLM to save conversation
+                    with st.spinner("Saving conversation to journal..."):
+                        summary_success, summary_response = send_message_to_llm(
+                            st.session_state.session_id, 
+                            "Save my input as a journal entry for today."
+                        )
+                        
+                        if summary_success:
+                            st.success("Saved to journal!")
+                        else:
+                            st.error(f"Failed to save to journal: {summary_response}")
+                    
+                    # Clear the session and create a new one
+                    st.session_state.messages = []
+                    st.session_state.session_id = generate_session_id()
+                    st.session_state.show_confirmation = False
+                    st.rerun()
+            
+            with col2:
+                if st.button("Let me get out of here"):
+                    # Just clear the session without saving
+                    st.session_state.messages = []
+                    st.session_state.session_id = generate_session_id()
+                    st.session_state.show_confirmation = False
+                    st.rerun()
 
 if __name__ == "__main__":
     main()
